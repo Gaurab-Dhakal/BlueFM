@@ -1,0 +1,12 @@
+# BlueFM gitignore
+storage/.fm_tmp/
+storage/.fm_auth.json
+storage/*
+!storage/index.html
+!storage/.htaccess
+
+# Environment & temporary files
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
