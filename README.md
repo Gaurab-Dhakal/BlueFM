@@ -1,10 +1,6 @@
 # BlueFM - Blue File Manager
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/username/bluefm/main/screenshots/bluefm-banner.png" alt="BlueFM Banner" width="100%" onerror="this.style.display='none'"/>
-</p>
-
-<p align="center">
   <strong>A modern, lightweight, single-file PHP web-based file manager engineered for shared cPanel hosting, strict PHP limits, and Imunify360 / ModSecurity WAF environments.</strong>
 </p>
 
