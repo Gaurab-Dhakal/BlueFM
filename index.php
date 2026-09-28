@@ -905,9 +905,21 @@ $is_authenticated = fm_is_logged_in();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <title><?= htmlspecialchars(FM_APP_TITLE) ?></title>
+
+    <!-- Progressive Web App (PWA) & Mobile Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars(FM_APP_TITLE) ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <style>
         :root {
             /* Warm, Human-Friendly Light Palette */
@@ -1691,6 +1703,145 @@ $is_authenticated = fm_is_logged_in();
             .search-box { width: 100%; }
             .hide-mobile { display: none; }
         }
+
+        /* PWA & Brand Logo Styles */
+        .brand-logo-img {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .login-logo-img {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            margin: 0 auto 1.25rem;
+            display: block;
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.16);
+            object-fit: cover;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .btn-install {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28);
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .btn-install:hover {
+            background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.38);
+        }
+
+        .btn-install:active {
+            transform: translateY(0);
+        }
+
+        .login-pwa-banner {
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
+            border: 1px solid #c7d2fe;
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            text-align: left;
+        }
+
+        .login-pwa-banner .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .login-pwa-banner .banner-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: #4f46e5;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        }
+
+        .login-pwa-banner strong {
+            display: block;
+            font-size: 0.84rem;
+            color: #1e1b4b;
+            font-weight: 600;
+        }
+
+        .login-pwa-banner span {
+            display: block;
+            font-size: 0.73rem;
+            color: #475569;
+        }
+
+        .install-guide-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .install-step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            background: var(--bg-subtle);
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.45;
+        }
+
+        .step-text strong {
+            color: var(--primary);
+        }
+
+        @media all and (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .pwa-hide-installed {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1705,8 +1856,18 @@ $is_authenticated = fm_is_logged_in();
             <span class="brand-badge">v<?= htmlspecialchars(FM_VERSION) ?></span>
         </a>
 
-        <?php if ($is_authenticated): ?>
         <div class="header-actions">
+            <!-- PWA Install Button (Available on both Login & Dashboard) -->
+            <button class="btn btn-sm btn-install pwa-hide-installed" id="btn-install-app" style="display: none;" title="Install BlueFM App">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Install App</span>
+            </button>
+
+            <?php if ($is_authenticated): ?>
             <button class="btn btn-sm" id="btn-open-settings" title="Change Username & Password">
                 <svg class="svg-icon" viewBox="0 0 24 24">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -1723,8 +1884,8 @@ $is_authenticated = fm_is_logged_in();
                 </svg>
                 <span class="hide-mobile">Logout</span>
             </button>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
     </header>
 
     <?php if (!$is_authenticated): ?>
@@ -1735,7 +1896,7 @@ $is_authenticated = fm_is_logged_in();
                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            <h1 class="login-title">BlueFM Sign In</h1>
+            <h1 class="login-title"><?= htmlspecialchars(FM_APP_TITLE) ?> Sign In</h1>
             <p class="login-subtitle">Enter your credentials to access the file manager</p>
 
             <?php if (!empty($login_error)): ?>
@@ -1758,6 +1919,26 @@ $is_authenticated = fm_is_logged_in();
                     <span>Sign In</span>
                 </button>
             </form>
+
+            <!-- PWA Quick Install Banner for Login Screen -->
+            <div id="login-pwa-banner" class="login-pwa-banner pwa-hide-installed" style="display: none;">
+                <div class="banner-content">
+                    <div class="banner-icon">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <strong>Install BlueFM App</strong>
+                        <span>Open directly from desktop or phone</span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-install" id="btn-login-install">
+                    Install
+                </button>
+            </div>
         </div>
     </div>
     <?php else: ?>
@@ -2099,6 +2280,23 @@ $is_authenticated = fm_is_logged_in();
     </div>
     <?php endif; ?>
 
+    <!-- MODAL: INSTALL APP GUIDE (iOS / Desktop) -->
+    <div class="modal-overlay" id="modal-install-guide">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <img src="icon-192.png" alt="BlueFM Logo" style="width: 28px; height: 28px; border-radius: 6px;">
+                    <h3 class="modal-title" id="install-guide-title">Install BlueFM</h3>
+                </div>
+                <button type="button" class="btn btn-icon btn-sm modal-close" title="Close"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="modal-body" id="install-guide-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close">Got It</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toast-container"></div>
 
     <script>
@@ -2112,6 +2310,164 @@ $is_authenticated = fm_is_logged_in();
         const CSRF_TOKEN = '<?= $_SESSION['fm_csrf'] ?? '' ?>';
         const CHUNK_SIZE = <?= FM_CHUNK_SIZE ?>; // 2MB
         const MAX_RETRIES = 3;
+
+        // --- BASE UTILITIES (HTML, Toast, Modal) ---
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let iconSvg = '';
+            if (type === 'success') {
+                iconSvg = `<svg class="svg-icon" style="color:var(--success)" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>`;
+            } else if (type === 'error') {
+                iconSvg = `<svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+            } else {
+                iconSvg = `<svg class="svg-icon" style="color:var(--primary)" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+            }
+            toast.innerHTML = `${iconSvg}<span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 250);
+            }, 3500);
+        }
+
+        function openModal(modal) { if (modal) modal.classList.add('active'); }
+        function closeModal(modal) { if (modal) modal.classList.remove('active'); }
+
+        document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => {
+            document.querySelectorAll('.modal-overlay').forEach(closeModal);
+        }));
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay); });
+        });
+
+        // --- PROGRESSIVE WEB APP (PWA) ENGINE ---
+        let deferredPrompt = null;
+        const btnInstallApp = document.getElementById('btn-install-app');
+        const btnLoginInstall = document.getElementById('btn-login-install');
+        const loginPwaBanner = document.getElementById('login-pwa-banner');
+        const modalInstallGuide = document.getElementById('modal-install-guide');
+        const installGuideBody = document.getElementById('install-guide-body');
+        const installGuideTitle = document.getElementById('install-guide-title');
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        if (isStandalone) {
+            document.body.classList.add('pwa-standalone');
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((reg) => {
+                        console.log('[PWA] Service Worker registered with scope:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.warn('[PWA] Service Worker registration failed:', err);
+                    });
+            });
+        }
+
+        function showInstallUi() {
+            if (isStandalone) return;
+            if (btnInstallApp) btnInstallApp.style.display = 'inline-flex';
+            if (loginPwaBanner) loginPwaBanner.style.display = 'flex';
+        }
+
+        function hideInstallUi() {
+            if (btnInstallApp) btnInstallApp.style.display = 'none';
+            if (loginPwaBanner) loginPwaBanner.style.display = 'none';
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallUi();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            hideInstallUi();
+            showToast('BlueFM installed! You can launch it directly from your device anytime.', 'success');
+        });
+
+        // If not running in standalone app mode, show install buttons
+        if (!isStandalone) {
+            showInstallUi();
+        }
+
+        async function triggerInstallFlow() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    deferredPrompt = null;
+                    hideInstallUi();
+                }
+            } else if (isIOS) {
+                if (installGuideTitle) installGuideTitle.textContent = 'Install BlueFM on iOS';
+                if (installGuideBody) {
+                    installGuideBody.innerHTML = `
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                            Install <strong>BlueFM</strong> on your home screen for quick, full-screen access without Safari's browser bar:
+                        </p>
+                        <div class="install-guide-steps">
+                            <div class="install-step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-text">Tap the <strong>Share</strong> button in Safari's bottom toolbar (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>).</div>
+                            </div>
+                            <div class="install-step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-text">Scroll down the menu and tap <strong>"Add to Home Screen"</strong> (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>).</div>
+                            </div>
+                            <div class="install-step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-text">Tap <strong>"Add"</strong> in the top-right corner. The app icon will appear directly on your Home Screen!</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                openModal(modalInstallGuide);
+            } else {
+                if (installGuideTitle) installGuideTitle.textContent = 'Install BlueFM App';
+                if (installGuideBody) {
+                    installGuideBody.innerHTML = `
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                            To install <strong>BlueFM</strong> as a standalone application on your computer:
+                        </p>
+                        <div class="install-guide-steps">
+                            <div class="install-step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-text">Click the <strong>Install</strong> icon (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="16" height="12" x="4" y="4" rx="2"></rect><polyline points="10 11 12 13 14 11"></polyline><line x1="12" y1="8" x2="12" y2="13"></line><line x1="8" y1="20" x2="16" y2="20"></line></svg>) in your browser's address bar.</div>
+                            </div>
+                            <div class="install-step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-text">Or click browser menu (<strong>&vellip;</strong>) &rarr; select <strong>"Install BlueFM"</strong> or <strong>"Apps &rarr; Install this site as an app"</strong>.</div>
+                            </div>
+                            <div class="install-step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-text">Click <strong>Install</strong> to launch it directly from your desktop or taskbar anytime without opening a browser!</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                openModal(modalInstallGuide);
+            }
+        }
+
+        if (btnInstallApp) btnInstallApp.addEventListener('click', triggerInstallFlow);
+        if (btnLoginInstall) btnLoginInstall.addEventListener('click', triggerInstallFlow);
 
         // --- AUTHENTICATION (Login Screen) ---
         const loginForm = document.getElementById('login-form');
@@ -2246,34 +2602,6 @@ $is_authenticated = fm_is_logged_in();
         const deleteDisplayName = document.getElementById('delete-display-name');
 
         // --- TOAST NOTIFICATIONS ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            let iconSvg = '';
-            if (type === 'success') {
-                iconSvg = `<svg class="svg-icon" style="color:var(--success)" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>`;
-            } else if (type === 'error') {
-                iconSvg = `<svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
-            } else {
-                iconSvg = `<svg class="svg-icon" style="color:var(--primary)" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
-            }
-            toast.innerHTML = `${iconSvg}<span>${escapeHtml(message)}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 250);
-            }, 3500);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         function formatBytes(bytes) {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -2281,16 +2609,6 @@ $is_authenticated = fm_is_logged_in();
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
-        // --- MODAL UTILS ---
-        function openModal(modal) { if (modal) modal.classList.add('active'); }
-        function closeModal(modal) { if (modal) modal.classList.remove('active'); }
-        document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => {
-            document.querySelectorAll('.modal-overlay').forEach(closeModal);
-        }));
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay); });
-        });
 
         // --- UPLOAD WIDGET DISMISS / CLOSE FIX ---
         function hideUploadWidget() {
