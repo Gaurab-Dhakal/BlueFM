@@ -67,6 +67,13 @@ Standard web file uploaders and managers frequently fail on shared cPanel hostin
 * **Real-time Filter**: Instant search/filter box as you type.
 * **Interactive Breadcrumbs**: One-click navigation to ancestor directories.
 
+### 📲 Progressive Web App (PWA) Standalone Installation
+* **Direct Desktop & Mobile App**: Install BlueFM as a standalone application on Windows, macOS, Linux, ChromeOS, Android, and iOS.
+* **Launch Without Browser**: Run directly from your Desktop, Taskbar, Start Menu, or Home Screen in its own dedicated, chromeless window without browser tabs or address bar.
+* **1-Click Install Button**: Intuitive "Install App" button in both the header and sign-in screen using the native `beforeinstallprompt` API.
+* **iOS Safari Guided Modal**: Interactive step-by-step instructions for iPhone and iPad users ("Add to Home Screen").
+* **Service Worker Caching**: Ultra-fast app shell caching with full pass-through for file uploads, chunk streams, and server actions.
+
 ---
 
 ## 🔒 Security Hardening
@@ -147,13 +154,51 @@ define('FM_DEFAULT_PASS', 'admin123');
 
 ---
 
+## 📱 Desktop & Mobile App Installation (PWA)
+
+BlueFM includes full **Progressive Web App (PWA)** support. You can install BlueFM directly onto your operating system or mobile device, allowing you to access and manage your files without needing to open a web browser first.
+
+### 🖥️ Installing on Desktop (Windows, macOS, Linux, ChromeOS)
+1. Open your BlueFM URL in Google Chrome, Microsoft Edge, Brave, or any Chromium-based browser over **HTTPS** (or `localhost`).
+2. Click the **"Install App"** button in the top navigation bar, or click the **Install icon** (monitor with a down arrow) on the right side of your browser's address bar.
+3. In the confirmation dialog, click **Install**.
+4. BlueFM will be installed as a native desktop application and added to your **Desktop**, **Taskbar / Dock**, and **Start Menu / Applications Launcher**.
+5. When launched, BlueFM opens in its own standalone, clean window without browser tabs or an address bar.
+
+### 📱 Installing on Android
+1. Open BlueFM in **Chrome** or **Samsung Internet**.
+2. Tap the **"Install App"** button on the page or tap the browser menu (⋮) and select **"Install app"** (or **"Add to Home screen"**).
+3. The BlueFM icon will appear on your Home Screen and in your App Drawer, launching full-screen just like a native Android app.
+
+### 🍏 Installing on iOS (iPhone & iPad)
+1. Open BlueFM in **Safari**.
+2. Tap the **"Install App"** button to view instructions, or tap the **Share** button (box with an arrow pointing up) in Safari's bottom toolbar.
+3. Scroll down and tap **"Add to Home Screen"**.
+4. Tap **"Add"** in the top-right corner.
+5. The BlueFM icon will be placed on your iOS Home Screen and opens in full-screen standalone mode.
+
+### 🎨 Customizing PWA Name, Colors & Icons
+* **App Name & Title**: Update `FM_APP_TITLE` in [index.php](index.php) (line 29) and `"name"` / `"short_name"` in [manifest.json](manifest.json).
+* **Theme & Accent Colors**: Modify `--primary` in [index.php](index.php) and `"theme_color"` / `"background_color"` in [manifest.json](manifest.json).
+* **Custom App Icons**: Replace `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, and `favicon.ico` with your custom brand logos.
+
+---
+
 ## 📁 File Structure
 
-BlueFM is intentionally packed into a **single self-contained file**:
+BlueFM is engineered with minimal overhead and self-contained structure:
 
 ```text
 filemanager/
 ├── index.php             # The complete application (Backend + Frontend)
+├── manifest.json         # PWA Web App Manifest (standalone app definition)
+├── sw.js                 # PWA Service Worker (app shell & offline caching)
+├── .htaccess             # Apache / cPanel MIME types & security headers
+├── icon-192.png          # Standard 192x192 app icon
+├── icon-512.png          # High-resolution 512x512 app icon
+├── icon-maskable-512.png # Adaptive maskable icon for Android
+├── apple-touch-icon.png  # Apple iOS Home Screen icon (180x180)
+├── favicon.ico           # Browser shortcut favicon
 ├── README.md             # Documentation
 └── storage/              # Storage directory (automatically created on first run)
     ├── .htaccess         # Security protection against direct chunk/auth access

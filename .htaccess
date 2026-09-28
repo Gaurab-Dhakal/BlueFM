@@ -1,0 +1,26 @@
+# BlueFM - PWA & Security Configuration for Apache / cPanel / LiteSpeed
+
+# MIME types for PWA Manifest and Service Worker
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest .json
+    AddType application/javascript .js
+    AddType image/svg+xml .svg
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+</IfModule>
+
+# Cache-Control headers for PWA lifecycle
+<IfModule mod_headers.c>
+    # Service worker should not be cached aggressively so updates are detected immediately
+    <Files "sw.js">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+        Header set Service-Worker-Allowed "/"
+    </Files>
+
+    # Manifest cache settings
+    <Files "manifest.json">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </Files>
+</IfModule>
