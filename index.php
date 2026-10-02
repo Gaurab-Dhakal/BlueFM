@@ -1,6 +1,6 @@
 <?php
 /**
- * Single-File PHP Web File Manager - BlueFM
+ * Single-File PHP Web File Manager - ChunkCrate
  * Optimized for Shared cPanel Hosting & Imunify360 / ModSecurity WAF
  *
  * Core Features:
@@ -25,8 +25,8 @@ declare(strict_types=1);
 @set_time_limit(180);
 
 // --- CONFIGURATION ---
-define('FM_VERSION', '1.0');
-define('FM_APP_TITLE', 'BlueFM');
+define('FM_VERSION', '1.2');
+define('FM_APP_TITLE', 'ChunkCrate');
 
 // Base storage directory
 define('FM_BASE_DIR', __DIR__ . DIRECTORY_SEPARATOR . 'storage');
@@ -755,7 +755,7 @@ if ($action === 'change_auth') {
     fm_json(['success' => true, 'message' => 'Credentials updated successfully!', 'username' => $new_user]);
 }
 
-// 14. DOWNLOAD FILE (Streamed, memory safe)
+// 14. DOWNLOAD FILE (Streamed, memory safe, Android & iOS compatible)
 if ($action === 'download') {
     $rel_path = (string)($_GET['path'] ?? '');
     $file_path = fm_resolve_path($rel_path, true);
@@ -768,16 +768,59 @@ if ($action === 'download') {
     $file_size = @filesize($file_path);
     $file_name = basename($file_path);
 
+    // Dynamic MIME type mapping for reliable mobile browser handling
+    $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+    $mimeMap = [
+        'pdf'  => 'application/pdf',
+        'zip'  => 'application/zip',
+        'tar'  => 'application/x-tar',
+        'gz'   => 'application/gzip',
+        'rar'  => 'application/x-rar-compressed',
+        '7z'   => 'application/x-7z-compressed',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+        'svg'  => 'image/svg+xml',
+        'mp4'  => 'video/mp4',
+        'webm' => 'video/webm',
+        'mp3'  => 'audio/mpeg',
+        'wav'  => 'audio/wav',
+        'json' => 'application/json',
+        'txt'  => 'text/plain',
+        'csv'  => 'text/csv',
+        'html' => 'text/html',
+        'doc'  => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls'  => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt'  => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    $contentType = $mimeMap[$ext] ?? 'application/octet-stream';
+
+    // RFC 6266 & RFC 5987 compliant filename headers (essential for iOS Safari & Android Chrome)
+    $safe_ascii = preg_replace('/[^\x20-\x7e]/', '', $file_name);
+    $safe_ascii = str_replace(['"', '\\', ';', '/', ':'], '_', $safe_ascii);
+    if (trim($safe_ascii) === '') {
+        $safe_ascii = 'download_file' . ($ext ? '.' . $ext : '');
+    }
+    $encoded_name = rawurlencode($file_name);
+
     while (ob_get_level()) ob_end_clean();
 
     header('Content-Description: File Transfer');
-    header('Content-Type: application/octet-stream');
-    header('Content-Disposition: attachment; filename="' . rawurlencode($file_name) . '"; filename*=UTF-8\'\'' . rawurlencode($file_name));
+    header('Content-Type: ' . $contentType);
+    header('Content-Disposition: attachment; filename="' . $safe_ascii . '"; filename*=UTF-8\'\'' . $encoded_name);
     header('Content-Transfer-Encoding: binary');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
     header('Expires: 0');
-    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    header('Pragma: public');
-    if ($file_size !== false) header('Content-Length: ' . $file_size);
+    if ($file_size !== false) {
+        header('Content-Length: ' . $file_size);
+    }
 
     $handle = fopen($file_path, 'rb');
     if ($handle !== false) {
@@ -906,8 +949,43 @@ $is_authenticated = fm_is_logged_in();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="robots" content="noindex, nofollow">
-    <title><?= htmlspecialchars(FM_APP_TITLE) ?></title>
+    <title><?= htmlspecialchars(FM_APP_TITLE) ?> - Modern Single-File PHP Web File Manager</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="ChunkCrate is a lightweight, single-file PHP web file manager engineered to handle multi-gigabyte uploads via 2MB chunks on budget shared hosting without external CDNs.">
+    <meta name="keywords" content="php file manager, chunked upload, web file manager, cpanel alternative, tinyfilemanager alternative, single file php, self-hosted storage, chunkcrate">
+    <meta name="author" content="ChunkCrate Contributors">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?= htmlspecialchars(FM_APP_TITLE) ?> - Fast, Chunked PHP Web File Manager">
+    <meta property="og:description" content="Manage, edit, zip, and upload multi-gigabyte files effortlessly with 2MB chunked upload technology and zero dependencies.">
+    <meta property="og:image" content="assets/images/screenshot_1.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars(FM_APP_TITLE) ?> - Fast, Chunked PHP Web File Manager">
+    <meta name="twitter:description" content="Manage, edit, zip, and upload multi-gigabyte files effortlessly with 2MB chunked upload technology and zero dependencies.">
+    <meta name="twitter:image" content="assets/images/screenshot_1.png">
+
+    <!-- Schema.org JSON-LD Structured Data for Search Engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "ChunkCrate",
+      "operatingSystem": "All",
+      "applicationCategory": "BusinessApplication, UtilitiesApplication",
+      "description": "A single-file, zero-dependency PHP web file manager engineered for shared hosting and chunked uploads.",
+      "softwareVersion": "1.2",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
 
     <!-- Progressive Web App (PWA) & Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
@@ -916,10 +994,10 @@ $is_authenticated = fm_is_logged_in();
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars(FM_APP_TITLE) ?>">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="assets/icons/favicon.ico">
     <style>
         :root {
             /* Warm, Human-Friendly Light Palette */
@@ -1695,8 +1773,12 @@ $is_authenticated = fm_is_logged_in();
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
-            .app-header { padding: 0.6rem 1rem; }
-            .container { padding: 1rem; }
+            .app-header { padding: 0.6rem 0.85rem; }
+            .brand { font-size: 1.05rem; gap: 0.5rem; }
+            .brand-badge { display: none; }
+            .header-actions { gap: 0.4rem; }
+            .pwa-btn-text { font-size: 0.8rem; }
+            .container { padding: 0.85rem; }
             .nav-bar { flex-direction: column; align-items: flex-start; }
             .toolbar { flex-direction: column; align-items: stretch; }
             .toolbar-left, .toolbar-right { width: 100%; justify-content: space-between; }
@@ -1734,6 +1816,9 @@ $is_authenticated = fm_is_logged_in();
             font-weight: 600;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
         }
 
         .btn-install:hover {
@@ -1744,6 +1829,135 @@ $is_authenticated = fm_is_logged_in();
 
         .btn-install:active {
             transform: translateY(0);
+        }
+
+        /* Floating Mobile Add to Home Screen Banner */
+        .pwa-mobile-banner {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            max-width: 480px;
+            margin: 0 auto;
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+            z-index: 99;
+            animation: slideUpBanner 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUpBanner {
+            from { transform: translateY(80px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .pwa-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+
+        .pwa-banner-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+        }
+
+        .pwa-banner-text {
+            min-width: 0;
+        }
+
+        .pwa-banner-text strong {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pwa-banner-text span {
+            display: block;
+            font-size: 0.73rem;
+            color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pwa-banner-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .btn-banner-dismiss {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.35rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: color 0.15s;
+        }
+
+        .btn-banner-dismiss:hover {
+            color: #ffffff;
+        }
+
+        /* Platform Selection Tabs in Modal */
+        .install-tabs {
+            display: flex;
+            gap: 0.4rem;
+            background: var(--bg-subtle);
+            padding: 0.3rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.15rem;
+        }
+
+        .install-tab-btn {
+            flex: 1;
+            padding: 0.5rem 0.6rem;
+            border: none;
+            background: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+
+        .install-tab-btn.active {
+            background: var(--bg-surface);
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         .login-pwa-banner {
@@ -1795,7 +2009,6 @@ $is_authenticated = fm_is_logged_in();
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
-            margin-top: 1rem;
             text-align: left;
         }
 
@@ -1857,14 +2070,13 @@ $is_authenticated = fm_is_logged_in();
         </a>
 
         <div class="header-actions">
-            <!-- PWA Install Button (Available on both Login & Dashboard) -->
-            <button class="btn btn-sm btn-install pwa-hide-installed" id="btn-install-app" style="display: none;" title="Install BlueFM App">
+            <!-- PWA Add to Home Screen Button (Available on both Login & Dashboard) -->
+            <button class="btn btn-sm btn-install pwa-hide-installed" id="btn-install-app" title="Add ChunkCrate to Home Screen">
                 <svg class="svg-icon" viewBox="0 0 24 24">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
                 </svg>
-                <span>Install App</span>
+                <span class="pwa-btn-text">Add to Home Screen</span>
             </button>
 
             <?php if ($is_authenticated): ?>
@@ -1920,23 +2132,22 @@ $is_authenticated = fm_is_logged_in();
                 </button>
             </form>
 
-            <!-- PWA Quick Install Banner for Login Screen -->
-            <div id="login-pwa-banner" class="login-pwa-banner pwa-hide-installed" style="display: none;">
+            <!-- PWA Quick Add to Home Screen Banner for Login Screen -->
+            <div id="login-pwa-banner" class="login-pwa-banner pwa-hide-installed">
                 <div class="banner-content">
                     <div class="banner-icon">
                         <svg class="svg-icon" viewBox="0 0 24 24">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
                         </svg>
                     </div>
                     <div>
-                        <strong>Install BlueFM App</strong>
-                        <span>Open directly from desktop or phone</span>
+                        <strong>Add ChunkCrate to Home Screen</strong>
+                        <span>Open directly from phone or desktop</span>
                     </div>
                 </div>
                 <button type="button" class="btn btn-sm btn-install" id="btn-login-install">
-                    Install
+                    Add
                 </button>
             </div>
         </div>
@@ -2245,6 +2456,18 @@ $is_authenticated = fm_is_logged_in();
                         <label class="form-label" for="settings-new-pass">New Password</label>
                         <input type="password" id="settings-new-pass" class="form-control" placeholder="Min. 6 characters" minlength="6" required>
                     </div>
+                    <div class="form-group pwa-hide-installed" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                        <label class="form-label" style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>📱 Add to Home Screen</span>
+                        </label>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+                            Install ChunkCrate on your device for fast access and fullscreen experience.
+                        </p>
+                        <button type="button" class="btn btn-sm btn-install" id="btn-settings-install" style="width: 100%;">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                            <span>Add to Home Screen</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn modal-close">Cancel</button>
@@ -2280,20 +2503,44 @@ $is_authenticated = fm_is_logged_in();
     </div>
     <?php endif; ?>
 
-    <!-- MODAL: INSTALL APP GUIDE (iOS / Desktop) -->
+    <!-- MODAL: ADD TO HOME SCREEN / INSTALL GUIDE -->
     <div class="modal-overlay" id="modal-install-guide">
         <div class="modal-card">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <img src="icon-192.png" alt="BlueFM Logo" style="width: 28px; height: 28px; border-radius: 6px;">
-                    <h3 class="modal-title" id="install-guide-title">Install BlueFM</h3>
+                    <img src="assets/icons/icon-192.png" alt="ChunkCrate Logo" style="width: 28px; height: 28px; border-radius: 6px;">
+                    <h3 class="modal-title" id="install-guide-title">Add ChunkCrate to Home Screen</h3>
                 </div>
                 <button type="button" class="btn btn-icon btn-sm modal-close" title="Close"><svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
-            <div class="modal-body" id="install-guide-body"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary modal-close">Got It</button>
+            <div class="modal-body" id="install-guide-body">
+                <div class="install-tabs" id="install-guide-tabs">
+                    <button type="button" class="install-tab-btn" data-tab="android">🤖 Android</button>
+                    <button type="button" class="install-tab-btn" data-tab="ios">🍏 iPhone / iPad</button>
+                    <button type="button" class="install-tab-btn" data-tab="desktop">💻 PC / Mac</button>
+                </div>
+                <div id="install-guide-steps-container"></div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Floating Add to Home Screen Banner (for Android & iOS browsers) -->
+    <div class="pwa-mobile-banner pwa-hide-installed" id="pwa-mobile-banner" style="display: none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+            </div>
+            <div class="pwa-banner-text">
+                <strong>Add ChunkCrate to Home Screen</strong>
+                <span>Fast, fullscreen access without browser bars</span>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button type="button" class="btn btn-sm btn-install" id="btn-banner-install">Add</button>
+            <button type="button" class="btn-banner-dismiss" id="btn-banner-close" title="Dismiss">&times;</button>
         </div>
     </div>
 
@@ -2301,7 +2548,7 @@ $is_authenticated = fm_is_logged_in();
 
     <script>
     /**
-     * BlueFM File Manager Client Engine
+     * ChunkCrate File Manager Client Engine
      * Pure Vanilla JavaScript (ES6+), Zero External Libraries
      */
     (function () {
@@ -2350,16 +2597,25 @@ $is_authenticated = fm_is_logged_in();
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay); });
         });
 
-        // --- PROGRESSIVE WEB APP (PWA) ENGINE ---
+        // --- PROGRESSIVE WEB APP (PWA) & ADD TO HOME SCREEN ENGINE ---
         let deferredPrompt = null;
         const btnInstallApp = document.getElementById('btn-install-app');
         const btnLoginInstall = document.getElementById('btn-login-install');
+        const btnSettingsInstall = document.getElementById('btn-settings-install');
         const loginPwaBanner = document.getElementById('login-pwa-banner');
+        const pwaMobileBanner = document.getElementById('pwa-mobile-banner');
+        const btnBannerInstall = document.getElementById('btn-banner-install');
+        const btnBannerClose = document.getElementById('btn-banner-close');
         const modalInstallGuide = document.getElementById('modal-install-guide');
         const installGuideBody = document.getElementById('install-guide-body');
+        const installGuideTabs = document.getElementById('install-guide-tabs');
+        const installGuideStepsContainer = document.getElementById('install-guide-steps-container');
         const installGuideTitle = document.getElementById('install-guide-title');
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) ||
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isMobile = isIOS || isAndroid || /Mobi|Tablet/i.test(navigator.userAgent);
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
         if (isStandalone) {
@@ -2383,11 +2639,17 @@ $is_authenticated = fm_is_logged_in();
             if (isStandalone) return;
             if (btnInstallApp) btnInstallApp.style.display = 'inline-flex';
             if (loginPwaBanner) loginPwaBanner.style.display = 'flex';
+            if (btnSettingsInstall) btnSettingsInstall.style.display = 'inline-flex';
+            if (pwaMobileBanner && isMobile && !sessionStorage.getItem('chunkcrate_banner_dismissed')) {
+                pwaMobileBanner.style.display = 'flex';
+            }
         }
 
         function hideInstallUi() {
             if (btnInstallApp) btnInstallApp.style.display = 'none';
             if (loginPwaBanner) loginPwaBanner.style.display = 'none';
+            if (btnSettingsInstall) btnSettingsInstall.style.display = 'none';
+            if (pwaMobileBanner) pwaMobileBanner.style.display = 'none';
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -2399,12 +2661,116 @@ $is_authenticated = fm_is_logged_in();
         window.addEventListener('appinstalled', () => {
             deferredPrompt = null;
             hideInstallUi();
-            showToast('BlueFM installed! You can launch it directly from your device anytime.', 'success');
+            showToast('ChunkCrate added to your device! You can launch it directly from your home screen anytime.', 'success');
         });
 
         // If not running in standalone app mode, show install buttons
         if (!isStandalone) {
             showInstallUi();
+        }
+
+        function renderInstallGuide(tab) {
+            if (!tab) {
+                tab = isIOS ? 'ios' : (isAndroid ? 'android' : 'desktop');
+            }
+
+            if (installGuideTabs) {
+                installGuideTabs.querySelectorAll('.install-tab-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+                });
+            }
+
+            if (!installGuideStepsContainer) return;
+
+            if (tab === 'ios') {
+                installGuideStepsContainer.innerHTML = `
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                        Add <strong>ChunkCrate</strong> to your iPhone or iPad home screen for instant fullscreen access:
+                    </p>
+                    <div class="install-guide-steps">
+                        <div class="install-step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">In Safari, tap the <strong>Share</strong> button (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>) in Safari's bottom toolbar (or top-right on iPad).</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">Scroll down the sharing sheet and tap <strong>"Add to Home Screen"</strong> (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>).</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">Tap <strong>"Add"</strong> in the top-right corner. The <strong>ChunkCrate</strong> icon will appear on your Home Screen!</div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'android') {
+                installGuideStepsContainer.innerHTML = `
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                        Add <strong>ChunkCrate</strong> to your Android Home Screen &amp; App Drawer:
+                    </p>
+                    ${deferredPrompt ? `
+                    <button type="button" class="btn btn-primary" id="btn-modal-install-now" style="width: 100%; margin-bottom: 1rem; padding: 0.65rem; font-weight: 600;">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                        <span>Add to Home Screen Now</span>
+                    </button>
+                    ` : ''}
+                    <div class="install-guide-steps">
+                        <div class="install-step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">Tap the browser menu <strong>(&vellip;)</strong> in the top-right corner of Chrome, Edge, or Samsung Internet.</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">Tap <strong>"Add"</strong> / <strong>"Install"</strong> to place ChunkCrate directly on your phone's home screen!</div>
+                        </div>
+                    </div>
+                `;
+                const btnModalNow = document.getElementById('btn-modal-install-now');
+                if (btnModalNow && deferredPrompt) {
+                    btnModalNow.addEventListener('click', async () => {
+                        closeModal(modalInstallGuide);
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            deferredPrompt = null;
+                            hideInstallUi();
+                            showToast('ChunkCrate added to your home screen!', 'success');
+                        }
+                    });
+                }
+            } else {
+                installGuideStepsContainer.innerHTML = `
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                        Install <strong>ChunkCrate</strong> as a standalone desktop application on PC or Mac:
+                    </p>
+                    <div class="install-guide-steps">
+                        <div class="install-step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">In Chrome or Edge, click the <strong>Install</strong> icon (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="16" height="12" x="4" y="4" rx="2"></rect><polyline points="10 11 12 13 14 11"></polyline><line x1="12" y1="8" x2="12" y2="13"></line><line x1="8" y1="20" x2="16" y2="20"></line></svg>) in your browser's address bar.</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">Or click browser menu (<strong>&vellip;</strong>) &rarr; select <strong>"Cast, save, and share" &rarr; "Install ChunkCrate"</strong>.</div>
+                        </div>
+                        <div class="install-step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">Click <strong>Install</strong> to launch ChunkCrate in its own standalone, distraction-free desktop window!</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        if (installGuideTabs) {
+            installGuideTabs.addEventListener('click', (e) => {
+                const btn = e.target.closest('.install-tab-btn');
+                if (btn) {
+                    renderInstallGuide(btn.getAttribute('data-tab'));
+                }
+            });
         }
 
         async function triggerInstallFlow() {
@@ -2414,60 +2780,24 @@ $is_authenticated = fm_is_logged_in();
                 if (outcome === 'accepted') {
                     deferredPrompt = null;
                     hideInstallUi();
+                    showToast('ChunkCrate added to your device!', 'success');
+                    return;
                 }
-            } else if (isIOS) {
-                if (installGuideTitle) installGuideTitle.textContent = 'Install BlueFM on iOS';
-                if (installGuideBody) {
-                    installGuideBody.innerHTML = `
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                            Install <strong>BlueFM</strong> on your home screen for quick, full-screen access without Safari's browser bar:
-                        </p>
-                        <div class="install-guide-steps">
-                            <div class="install-step-item">
-                                <div class="step-num">1</div>
-                                <div class="step-text">Tap the <strong>Share</strong> button in Safari's bottom toolbar (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>).</div>
-                            </div>
-                            <div class="install-step-item">
-                                <div class="step-num">2</div>
-                                <div class="step-text">Scroll down the menu and tap <strong>"Add to Home Screen"</strong> (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>).</div>
-                            </div>
-                            <div class="install-step-item">
-                                <div class="step-num">3</div>
-                                <div class="step-text">Tap <strong>"Add"</strong> in the top-right corner. The app icon will appear directly on your Home Screen!</div>
-                            </div>
-                        </div>
-                    `;
-                }
-                openModal(modalInstallGuide);
-            } else {
-                if (installGuideTitle) installGuideTitle.textContent = 'Install BlueFM App';
-                if (installGuideBody) {
-                    installGuideBody.innerHTML = `
-                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                            To install <strong>BlueFM</strong> as a standalone application on your computer:
-                        </p>
-                        <div class="install-guide-steps">
-                            <div class="install-step-item">
-                                <div class="step-num">1</div>
-                                <div class="step-text">Click the <strong>Install</strong> icon (<svg class="svg-icon" style="width:1.1rem;height:1.1rem;vertical-align:-2px;color:var(--primary);" viewBox="0 0 24 24"><rect width="16" height="12" x="4" y="4" rx="2"></rect><polyline points="10 11 12 13 14 11"></polyline><line x1="12" y1="8" x2="12" y2="13"></line><line x1="8" y1="20" x2="16" y2="20"></line></svg>) in your browser's address bar.</div>
-                            </div>
-                            <div class="install-step-item">
-                                <div class="step-num">2</div>
-                                <div class="step-text">Or click browser menu (<strong>&vellip;</strong>) &rarr; select <strong>"Install BlueFM"</strong> or <strong>"Apps &rarr; Install this site as an app"</strong>.</div>
-                            </div>
-                            <div class="install-step-item">
-                                <div class="step-num">3</div>
-                                <div class="step-text">Click <strong>Install</strong> to launch it directly from your desktop or taskbar anytime without opening a browser!</div>
-                            </div>
-                        </div>
-                    `;
-                }
-                openModal(modalInstallGuide);
             }
+            renderInstallGuide();
+            openModal(modalInstallGuide);
         }
 
         if (btnInstallApp) btnInstallApp.addEventListener('click', triggerInstallFlow);
         if (btnLoginInstall) btnLoginInstall.addEventListener('click', triggerInstallFlow);
+        if (btnSettingsInstall) btnSettingsInstall.addEventListener('click', triggerInstallFlow);
+        if (btnBannerInstall) btnBannerInstall.addEventListener('click', triggerInstallFlow);
+        if (btnBannerClose) {
+            btnBannerClose.addEventListener('click', () => {
+                if (pwaMobileBanner) pwaMobileBanner.style.display = 'none';
+                sessionStorage.setItem('chunkcrate_banner_dismissed', '1');
+            });
+        }
 
         // --- AUTHENTICATION (Login Screen) ---
         const loginForm = document.getElementById('login-form');
@@ -2788,6 +3118,8 @@ $is_authenticated = fm_is_logged_in();
                 if (selectedItems.has(item.name)) tr.classList.add('selected');
 
                 const icon = getFileIcon(item);
+                const itemPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+                const downloadUrl = `?action=download&path=${encodeURIComponent(itemPath)}`;
 
                 tr.innerHTML = `
                     <td style="text-align: center;">
@@ -2825,9 +3157,9 @@ $is_authenticated = fm_is_logged_in();
                             ` : ''}
 
                             ${!item.is_dir ? `
-                            <button class="btn btn-icon btn-sm action-download" title="Download file" data-name="${escapeHtml(item.name)}">
+                            <a href="${downloadUrl}" download="${escapeHtml(item.name)}" class="btn btn-icon btn-sm action-download" title="Download file" data-name="${escapeHtml(item.name)}" target="_self">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            </button>
+                            </a>
                             ` : ''}
 
                             <button class="btn btn-icon btn-sm action-duplicate" title="Duplicate" data-name="${escapeHtml(item.name)}">
@@ -2879,7 +3211,11 @@ $is_authenticated = fm_is_logged_in();
                 if (btnUnzip) btnUnzip.addEventListener('click', (e) => { e.stopPropagation(); extractZip(item.name); });
 
                 const btnDownload = tr.querySelector('.action-download');
-                if (btnDownload) btnDownload.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(item.name); });
+                if (btnDownload) {
+                    btnDownload.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
 
                 tr.querySelector('.action-duplicate').addEventListener('click', (e) => { e.stopPropagation(); duplicateItem(item.name); });
                 tr.querySelector('.action-rename').addEventListener('click', (e) => { e.stopPropagation(); openRenameModal(item.name); });
@@ -2983,7 +3319,17 @@ $is_authenticated = fm_is_logged_in();
 
         function downloadFile(name) {
             const filePath = currentPath ? `${currentPath}/${name}` : name;
-            window.location.href = `?action=download&path=${encodeURIComponent(filePath)}`;
+            const downloadUrl = `?action=download&path=${encodeURIComponent(filePath)}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', name);
+            link.setAttribute('target', '_self');
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                if (link.parentNode) link.parentNode.removeChild(link);
+            }, 1000);
         }
 
         // Duplicate
@@ -3088,10 +3434,13 @@ $is_authenticated = fm_is_logged_in();
 
         // Viewer / Previewer
         function openViewer(item) {
-            const rawUrl = `?action=raw&path=${encodeURIComponent(currentPath ? `${currentPath}/${item.name}` : item.name)}`;
+            const filePath = currentPath ? `${currentPath}/${item.name}` : item.name;
+            const rawUrl = `?action=raw&path=${encodeURIComponent(filePath)}`;
+            const downloadUrl = `?action=download&path=${encodeURIComponent(filePath)}`;
             viewerTitle.textContent = `Preview: ${item.name}`;
-            viewerDownloadLink.href = rawUrl;
+            viewerDownloadLink.href = downloadUrl;
             viewerDownloadLink.setAttribute('download', item.name);
+            viewerDownloadLink.setAttribute('target', '_self');
             viewerContent.innerHTML = '';
 
             if (item.is_image) {

@@ -1,51 +1,60 @@
 {
-  "name": "BlueFM",
-  "short_name": "BlueFM",
-  "description": "BlueFM - Single-File PHP Web File Manager",
+  "name": "ChunkCrate - File Manager",
+  "short_name": "ChunkCrate",
+  "description": "Lightweight, secure, and modern chunked web file manager for desktop and mobile.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "any",
-  "background_color": "#f8fafc",
+  "background_color": "#0f172a",
   "theme_color": "#4f46e5",
   "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-maskable-512.png",
+      "src": "assets/icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "apple-touch-icon.png",
+      "src": "assets/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/images/screenshot_1.png",
+      "sizes": "1366x660",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "ChunkCrate Dashboard"
     }
   ],
   "shortcuts": [
     {
       "name": "Files",
       "short_name": "Files",
-      "description": "Open BlueFM File Manager",
+      "description": "Open ChunkCrate File Manager",
       "url": "./",
       "icons": [
         {
-          "src": "icon-192.png",
+          "src": "assets/icons/icon-192.png",
           "sizes": "192x192"
         }
       ]

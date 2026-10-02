@@ -1,19 +1,20 @@
 /**
- * BlueFM Service Worker
+ * ChunkCrate Service Worker
  * Progressive Web App Engine
  */
 
-const CACHE_NAME = 'bluefm-pwa-v1';
+const CACHE_NAME = 'chunkcrate-pwa-v1.2';
 const PRECACHE_ASSETS = [
   './',
   'manifest.json',
-  'icon-192.png',
-  'icon-512.png',
-  'icon-maskable-512.png',
-  'apple-touch-icon.png',
-  'favicon.ico',
-  'favicon-32x32.png',
-  'favicon-16x16.png'
+  'assets/icons/icon-192.png',
+  'assets/icons/icon-512.png',
+  'assets/icons/icon-maskable-512.png',
+  'assets/icons/apple-touch-icon.png',
+  'assets/icons/favicon.ico',
+  'assets/icons/favicon-32x32.png',
+  'assets/icons/favicon-16x16.png',
+  'assets/images/logo.jpeg'
 ];
 
 // Precache essential assets on install
@@ -45,8 +46,8 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Strictly pass-through for non-GET methods or dynamic file manager actions
-  if (request.method !== 'GET' || url.searchParams.has('action')) {
+  // Strictly pass-through for non-GET methods, downloads, or dynamic file manager actions
+  if (request.method !== 'GET' || url.searchParams.has('action') || url.pathname.includes('/storage/')) {
     return;
   }
 
