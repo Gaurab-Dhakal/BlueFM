@@ -1,7 +1,7 @@
 # ChunkCrate: Ultra-Lightweight Single-File PHP Web File Manager
 
 <p align="center">
-  <img src="assets/images/screenshot_1.png" alt="ChunkCrate - Single-File PHP Web File Manager & Chunked Uploader" width="100%" onerror="this.src='https://raw.githubusercontent.com/gaupalawes/chunkcrate/main/assets/images/chunkcrate_gif.gif'"/>
+  <img src="assets/images/chunkcrate_gif.gif" alt="ChunkCrate - Single-File PHP Web File Manager & Chunked Uploader" width="100%" onerror="this.src='https://raw.githubusercontent.com/gaupalawes/chunkcrate/main/assets/images/chunkcrate_gif.gif'"/>
 </p>
 
 <p align="center">
